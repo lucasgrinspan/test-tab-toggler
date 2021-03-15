@@ -1,26 +1,57 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
+import * as path from "path";
+import { getFile, isSourceFile, isTestFile, openFile } from "./file";
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+const { commands, window, workspace } = vscode;
+
+export function display(message: string) {
+    window.setStatusBarMessage(message, 5000);
+}
+
+export function getActiveFileName(): string {
+    const file = window.activeTextEditor;
+    if (file) {
+        const filePath = file.document.fileName;
+        const fileName = path.basename(filePath);
+        return fileName;
+    }
+    return "";
+}
+
 export function activate(context: vscode.ExtensionContext) {
+    let disposable = commands.registerCommand("test-tab-toggler.openUnitTest", async () => {
+        const fileName = getActiveFileName();
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "test-tab-toggler" is now active!');
+        if (!fileName) {
+            return;
+        }
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('test-tab-toggler.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
+        let targetFile = "";
+        if (isSourceFile(fileName)) {
+            const [identifier, extension] = fileName.split(".");
+            targetFile = `${identifier}.spec.${extension}`;
+        } else if (isTestFile(fileName)) {
+            const [identifier, testName, extension] = fileName.split(".");
+            targetFile = `${identifier}.${extension}`;
+        } else {
+            display("This file name could not be parsed");
+            return;
+        }
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Test Tab Toggler!');
-	});
+        try {
+            const document = await getFile(targetFile);
+            if (document) {
+                openFile(document);
+            } else {
+                display(`There is no file named ${targetFile}`);
+            }
+        } catch (e) {
+            display(`There was an error opening ${targetFile}`);
+            console.error(e);
+        }
+    });
 
-	context.subscriptions.push(disposable);
+    context.subscriptions.push(disposable);
 }
 
 // this method is called when your extension is deactivated
