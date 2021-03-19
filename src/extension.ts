@@ -1,5 +1,12 @@
 import * as vscode from "vscode";
-import { getActiveFileName, getFile, isSourceFile, isTestFile, openFile } from "./file";
+import {
+    getActiveFileUri,
+    getFile,
+    getFilenameFromUri,
+    isSourceFile,
+    isTestFile,
+    openFile,
+} from "./file";
 
 const { commands, window } = vscode;
 
@@ -9,11 +16,12 @@ export function display(message: string) {
 
 export function activate(context: vscode.ExtensionContext) {
     let disposable = commands.registerCommand("test-tab-toggler.openUnitTest", async () => {
-        const fileName = getActiveFileName();
+        const fileUri = getActiveFileUri();
 
-        if (!fileName) {
+        if (!fileUri) {
             return;
         }
+        const fileName = getFilenameFromUri(fileUri);
 
         let targetFile = "";
         if (isSourceFile(fileName)) {
@@ -28,8 +36,9 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         try {
-            const document = await getFile(targetFile);
-            if (document) {
+            const targetFilePath = await getFile(targetFile, fileUri);
+            if (targetFilePath) {
+                const document = vscode.Uri.file(targetFilePath);
                 openFile(document);
             } else {
                 display(`There is no file named ${targetFile}`);

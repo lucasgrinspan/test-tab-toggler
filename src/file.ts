@@ -11,12 +11,53 @@ export function isTestFile(fileName: string): boolean {
     return tokens.length === 3 && (tokens[1] === "spec" || tokens[1] === "test");
 }
 
-export function getFile(fileName: string) {
-    return vscode.workspace.findFiles(`**/${fileName}`).then((results) => {
-        if (results.length > 0) {
-            return results[0];
+// First, the function should return any path that is in a subdirectory
+// If there are no subdirectory paths, it should return the path with the fewest
+// ".."
+export function getNearestPath(paths: string[]): string | null {
+    let minDoubleDotCount = 100;
+    let selectedDocument = null;
+    for (let i = 0; i < paths.length; i++) {
+        const relativePath = paths[i];
+        const tokens = relativePath.split(path.sep);
+
+        // If it is in a subdirectory
+        if (tokens[0] !== "..") {
+            selectedDocument = relativePath;
+            break;
         }
-        return null;
+
+        let doubleDotCount = 0;
+        tokens.forEach((token) => {
+            if (token === "..") {
+                doubleDotCount++;
+            }
+        });
+
+        if (doubleDotCount < minDoubleDotCount) {
+            minDoubleDotCount = doubleDotCount;
+            selectedDocument = relativePath;
+        }
+    }
+    return selectedDocument;
+}
+
+export function getFile(fileName: string, source: vscode.Uri) {
+    return vscode.workspace.findFiles(`**/${fileName}`).then((results) => {
+        if (results.length === 0) {
+            return null;
+        }
+
+        // It should return the file that is "nearest" to the source file
+        const targetPath = getNearestPath(
+            results.map((file) => path.relative(source.fsPath, file.fsPath))
+        );
+
+        if (targetPath) {
+            return path.resolve(source.fsPath, targetPath);
+        } else {
+            return null;
+        }
     });
 }
 
@@ -24,12 +65,15 @@ export function openFile(fileUri: vscode.Uri) {
     vscode.window.showTextDocument(fileUri, { preview: false });
 }
 
-export function getActiveFileName(): string {
+export function getActiveFileUri(): vscode.Uri | null {
     const file = vscode.window.activeTextEditor;
     if (file) {
-        const filePath = file.document.fileName;
-        const fileName = path.basename(filePath);
-        return fileName;
+        return file.document.uri;
     }
-    return "";
+    return null;
+}
+
+export function getFilenameFromUri(uri: vscode.Uri): string {
+    const filePath = uri.fsPath;
+    return path.basename(filePath);
 }
