@@ -20,7 +20,7 @@ npm run build
 This will create a `.vsix` file in the root of the project directory. This extension file can be installed with
 
 ```console
-code --install-extension test-tab-toggler-0.0.1.vsix
+code --install-extension test-tab-toggler-0.0.2.vsix
 ```
 
 If you can't generate the `.vsix` file, you can download it from the [Releases Tab](https://github.com/lucasgrinspan/test-tab-toggler/releases).
