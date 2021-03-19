@@ -3,7 +3,7 @@
     "displayName": "Test Tab Toggler",
     "description": "Switch to your unit tests with a quick shortcut",
     "publisher": "lucasgrinspan",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "repository": "https://github.com/lucasgrinspan/test-tab-toggler",
     "engines": {
         "vscode": "^1.54.0"
